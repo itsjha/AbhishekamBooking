@@ -86,7 +86,7 @@ async function loadBookings() {
 
   (data || []).forEach(item => {
     calendar.addEvent({
-      title: item.booked_name + '\nFlat ' + item.flat_no,
+      title: item.booked_name + '\n Flat: ' + item.flat_no,
       start: item.booking_date,
       allDay: true
     });
