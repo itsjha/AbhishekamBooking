@@ -1,78 +1,124 @@
 const SUPABASE_URL = 'https://rbzvnsriumibdjryiwpx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_KWcfaZ3dAQ2ncWEvkv9dTA_Ig46rHwq';
+const REDIRECT_URL = 'https://itsjha.github.io/AbhishekamBooking/';
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+let client = null;
 let currentUser = null;
-
-async function checkLogin() {
-
-  const {
-    data: { session }
-  } = await client.auth.getSession();
-
-  if (session) {
-    currentUser = session.user;
-    showMessage("Logged in as " + currentUser.email);
-  }
-}
-
-checkLogin();
-
-async function login() {
-
-  const email = document.getElementById('email').value;
-  const name = document.getElementById('name').value;
-
-  if (!email || !name) {
-    showMessage("Enter name and email");
-    return;
-  }
-
-  const { data, error } = await client.auth.signInWithOtp({
-    email: email,
-    options: {
-      emailRedirectTo: 'https://yourname.github.io/booking-calendar/'
-      data: {
-        full_name: name
-      },
-    }
-  });
-
-  console.log(data);
-  console.log(error);
-
-  if (error) {
-    showMessage(error.message);
-  } else {
-    showMessage("Magic login link sent to email");
-  }
-}
+let calendar = null;
 
 function showMessage(msg) {
   document.getElementById('message').innerText = msg;
 }
 
+async function initSupabase() {
+  if (!window.supabase || !window.supabase.createClient) {
+    showMessage('Supabase library did not load.');
+    return false;
+  }
+
+  client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const { data, error } = await client.auth.getSession();
+  if (error) {
+    console.log(error);
+    return true;
+  }
+
+  currentUser = data.session ? data.session.user : null;
+  if (currentUser) {
+    showMessage('Logged in as ' + currentUser.email);
+  }
+
+  return true;
+}
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const name = document.getElementById('name').value.trim();
+
+  if (!email || !name) {
+    showMessage('Enter name and email');
+    return;
+  }
+
+  if (!client) {
+    showMessage('Supabase is not ready yet. Refresh once.');
+    return;
+  }
+
+  const { error } = await client.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: REDIRECT_URL,
+      data: {
+        full_name: name
+      }
+    }
+  });
+
+  if (error) {
+    console.log(error);
+    showMessage(error.message);
+  } else {
+    showMessage('Login link sent to your email.');
+  }
+}
+
+window.login = login;
+
+async function loadBookings() {
+  if (!client || !calendar) return;
+
+  const { data, error } = await client
+    .from('bookings')
+    .select('*')
+    .order('booking_date');
+
+  if (error) {
+    console.log(error);
+    showMessage(error.message);
+    return;
+  }
+
+  calendar.removeAllEvents();
+
+  (data || []).forEach(item => {
+    calendar.addEvent({
+      title: 'BOOKED',
+      start: item.booking_date,
+      allDay: true
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
+  if (!window.FullCalendar) {
+    showMessage('Calendar library did not load.');
+    return;
+  }
 
-  const calendarEl = document.getElementById('calendar');
-
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-
+  calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: 'dayGridMonth',
-
     dateClick: async function(info) {
+      if (!client) {
+        alert('Login system is not ready yet.');
+        return;
+      }
 
       const clickedDate = info.dateStr;
 
-      const { data: existing } = await client
+      const { data: existing, error } = await client
         .from('bookings')
         .select('*')
         .eq('booking_date', clickedDate)
-        .single();
+        .maybeSingle();
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
 
       if (existing) {
-
         let allowDelete = false;
 
         if (currentUser && currentUser.id === existing.user_id) {
@@ -80,85 +126,54 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
 
         const msg =
-          "Already booked by " +
+          'Already booked by ' +
           existing.booked_name +
-          (allowDelete ? "\n\nPress OK to delete booking." : "");
+          (allowDelete ? '\n\nPress OK to delete booking.' : '');
 
         const wantsDelete = confirm(msg);
 
         if (allowDelete && wantsDelete) {
-
-          const { error } = await client
+          const { error: delError } = await client
             .from('bookings')
             .delete()
             .eq('id', existing.id);
 
-          if (error) {
-            alert(error.message);
+          if (delError) {
+            alert(delError.message);
           } else {
-            alert("Booking deleted");
-            loadBookings(calendar);
+            alert('Booking deleted');
+            loadBookings();
           }
         }
-
       } else {
-
         if (!currentUser) {
-          alert("Please login first");
+          alert('Please login first');
           return;
         }
 
-        const confirmBooking = confirm(
-          "Book " + clickedDate + " ?"
-        );
-
+        const confirmBooking = confirm('Book ' + clickedDate + ' ?');
         if (!confirmBooking) return;
 
-        const { error } = await client
+        const { error: insertError } = await client
           .from('bookings')
           .insert({
             booking_date: clickedDate,
             user_id: currentUser.id,
-            booked_name: currentUser.user_metadata.full_name || 'Guest',
+            booked_name: currentUser.user_metadata?.full_name || 'Guest',
             booked_email: currentUser.email
           });
 
-        if (error) {
-          alert(error.message);
+        if (insertError) {
+          alert(insertError.message);
         } else {
-          alert("Booking successful");
-          loadBookings(calendar);
+          alert('Booking successful');
+          loadBookings();
         }
       }
     }
-
   });
 
   calendar.render();
-
-  loadBookings(calendar);
+  await initSupabase();
+  await loadBookings();
 });
-
-async function loadBookings(calendar) {
-
-  const { data, error } = await client
-    .from('bookings')
-    .select('*');
-
-  if (error) {
-    console.log(error);
-    return;
-  }
-
-  calendar.removeAllEvents();
-
-  data.forEach(item => {
-
-    calendar.addEvent({
-      title: 'BOOKED',
-      start: item.booking_date,
-      allDay: true
-    });
-
-  });
-}
