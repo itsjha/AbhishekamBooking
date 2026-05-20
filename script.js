@@ -29,19 +29,21 @@ async function login() {
     return;
   }
 
-  const { error } = await client.auth.signInWithOtp({
-    email,
+  const { data, error } = await client.auth.signInWithOtp({
+    email: email,
     options: {
+      emailRedirectTo: 'https://yourname.github.io/booking-calendar/'
       data: {
         full_name: name
       },
-      emailRedirectTo: 'https://yourname.github.io/booking-calendar/'
     }
   });
 
+  console.log(data);
+  console.log(error);
+
   if (error) {
     showMessage(error.message);
-    console.log(error);
   } else {
     showMessage("Magic login link sent to email");
   }
