@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Booking Calendar</title>
 
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+  <h1>Event Booking Calendar</h1>
+
+  <div class="login-box">
+
+    <input type="text" id="name" placeholder="Your Name">
+
+    <input type="email" id="email" placeholder="Your Email">
+
+    <button onclick="login()">Send Login Link</button>
+
+  </div>
+
+  <div id="message"></div>
+
+  <div id="calendar"></div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
