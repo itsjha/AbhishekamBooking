@@ -1,1 +1,35 @@
+body {
+  font-family: Arial;
+  margin: 30px;
+}
 
+h1 {
+  text-align: center;
+}
+
+.login-box {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+input {
+  padding: 10px;
+  margin: 5px;
+  width: 220px;
+}
+
+button {
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+#message {
+  margin: 15px;
+  text-align: center;
+  font-weight: bold;
+}
+
+#calendar {
+  max-width: 900px;
+  margin: auto;
+}
