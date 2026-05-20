@@ -35,9 +35,10 @@ async function initSupabase() {
 async function login() {
   const email = document.getElementById('email').value.trim();
   const name = document.getElementById('name').value.trim();
-
-  if (!email || !name) {
-    showMessage('Enter name and email');
+  const flatNo = document.getElementById('flatNo').value.trim();
+  
+  if (!email || !name || !flatNo) {
+    showMessage('Enter name, flat no, and email');
     return;
   }
 
@@ -51,7 +52,8 @@ async function login() {
     options: {
       emailRedirectTo: REDIRECT_URL,
       data: {
-        full_name: name
+        full_name: name,
+        flat_no: flatNo
       }
     }
   });
@@ -84,7 +86,7 @@ async function loadBookings() {
 
   (data || []).forEach(item => {
     calendar.addEvent({
-      title: 'BOOKED',
+      title: item.booked_name + ' - Flat ' + item.flat_no,
       start: item.booking_date,
       allDay: true
     });
@@ -154,12 +156,21 @@ document.addEventListener('DOMContentLoaded', async function () {
         const confirmBooking = confirm('Book ' + clickedDate + ' ?');
         if (!confirmBooking) return;
 
+        const flatNo = document.getElementById('flatNo').value.trim();
+        const name = document.getElementById('name').value.trim();
+
+        if (!name || !flatNo) {
+          alert('Please enter name and flat no');
+          return;
+        }
+
         const { error: insertError } = await client
           .from('bookings')
           .insert({
             booking_date: clickedDate,
             user_id: currentUser.id,
-            booked_name: currentUser.user_metadata?.full_name || 'Guest',
+            booked_name: name,
+            flat_no: flatNo,
             booked_email: currentUser.email
           });
 
