@@ -86,7 +86,7 @@ async function loadBookings() {
 
   (data || []).forEach(item => {
     calendar.addEvent({
-      title: item.booked_name + '\n Flat: ' + item.flat_no,
+      title: item.booked_name + '<br>Flat: ' + item.flat_no,
       start: item.booking_date,
       allDay: true
     });
@@ -101,6 +101,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: 'dayGridMonth',
+    eventContent: function(arg) {
+    return {
+      html: arg.event.title
+      };
+    },
     dateClick: async function(info) {
       if (!client) {
         alert('Login system is not ready yet.');
