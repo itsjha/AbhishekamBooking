@@ -26,6 +26,7 @@ async function initSupabase() {
 
   currentUser = data.session ? data.session.user : null;
   if (currentUser) {
+    await loadProfile();
     showMessage('Logged in as ' + currentUser.email);
   }
 
@@ -168,7 +169,12 @@ document.addEventListener('DOMContentLoaded', async function () {
           alert('Please enter name and flat no');
           return;
         }
-
+        await client.from('profiles').upsert({
+        id: currentUser.id,
+        full_name: name,
+        flat_no: flatNo
+        });
+        
         const { error: insertError } = await client
           .from('bookings')
           .insert({
@@ -188,6 +194,25 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     }
   });
+  async function loadProfile() {
+  if (!client || !currentUser) return;
+
+  const { data, error } = await client
+    .from('profiles')
+    .select('full_name, flat_no, is_admin')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  if (data) {
+    if (data.full_name) document.getElementById('name').value = data.full_name;
+    if (data.flat_no) document.getElementById('flatNo').value = data.flat_no;
+  }
+}  
 
   calendar.render();
   await initSupabase();
