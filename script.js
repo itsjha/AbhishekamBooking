@@ -30,7 +30,7 @@ async function login() {
   }
 
   const { error } = await client.auth.signInWithOtp({
-    email: email,
+    email,
     options: {
       data: {
         full_name: name
@@ -41,6 +41,7 @@ async function login() {
 
   if (error) {
     showMessage(error.message);
+    console.log(error);
   } else {
     showMessage("Magic login link sent to email");
   }
