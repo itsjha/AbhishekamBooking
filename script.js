@@ -34,7 +34,8 @@ async function login() {
     options: {
       data: {
         full_name: name
-      }
+      },
+      emailRedirectTo: 'https://yourname.github.io/booking-calendar/'
     }
   });
 
